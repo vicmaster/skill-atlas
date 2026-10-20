@@ -5,13 +5,14 @@ import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 const PANE = 'skill-atlas'
 // Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
 // stale copy is visible at a glance.
-const VERSION = '0.4.0'
+const VERSION = '0.5.0'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const
 const sessionRef = { plugin: 'skill-atlas', key: 'session' } as const
 const projectsRef = { plugin: 'skill-atlas', key: 'projects' } as const
 const scannedRef = { plugin: 'skill-atlas', key: 'scannedAt' } as const
+const expandedRef = { plugin: 'skill-atlas', key: 'expanded' } as const
 
 /** Minimal YAML frontmatter reader: name + description, quoted or folded. */
 const parseFrontmatter = (text: string): { name?: string; description?: string } => {
@@ -337,6 +338,7 @@ export const register: Register = on => {
     const { value: session = [] } = await $.state.get(sessionRef)
     const { value: projects = [] } = await $.state.get(projectsRef)
     const { value: scannedAt = 0 } = await $.state.get(scannedRef)
+    const { value: expanded = [] } = await $.state.get(expandedRef)
     const query = filter.trim().toLowerCase()
 
     if (e.surface === 'mobile') {
@@ -361,20 +363,33 @@ export const register: Register = on => {
 
     const item = (one: AtlasItem, address: string) => {
       const icon = one.kind === 'agent' ? pickAgentIcon(one.name, one.description) : SKILL_ICON
+      const isExpanded = expanded.includes(address)
+      const toggle = () =>
+        void $.state.set(
+          expandedRef,
+          isExpanded ? expanded.filter(a => a !== address) : [...expanded, address],
+        )
       return (
         <Box flexDirection="column">
           <Box gap={1} alignItems="center">
             {Svg !== undefined && (
               <Svg source={svgSource(icon)} alt={one.kind} width={14} height={14} />
             )}
-            <Button key={address} onPress={() => $.ui.toast(one.path)}>
+            <Button key={address} onPress={toggle}>
               {`${one.kind === 'skill' ? '/' : '@'}${one.name}`}
               {one.scope !== 'project' && <Text dimColor size="caption">{` ${one.scope}`}</Text>}
             </Button>
           </Box>
           {one.description !== '' && (
             <Box paddingLeft={2}>
-              <Text dimColor size="caption" wrap="wrap">{trim(one.description, descMax)}</Text>
+              <Text dimColor size="caption" wrap="wrap">
+                {isExpanded ? one.description : trim(one.description, descMax)}
+              </Text>
+            </Box>
+          )}
+          {isExpanded && (
+            <Box paddingLeft={2}>
+              <Text dimColor size="caption" mono wrap="wrap">{one.path}</Text>
             </Box>
           )}
         </Box>
@@ -458,7 +473,8 @@ export const register: Register = on => {
           })}
         {scannedAt !== 0 && (
           <Text dimColor size="caption">
-            v{VERSION} · {shown} shown · scanned {new Date(scannedAt).toLocaleTimeString()}
+            v{VERSION} · {shown} shown · press an entry for its full description · scanned{' '}
+            {new Date(scannedAt).toLocaleTimeString()}
           </Text>
         )}
       </Box>

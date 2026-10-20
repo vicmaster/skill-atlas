@@ -17,6 +17,8 @@ declare module 'claude-code' {
     'skill-atlas': {
       view: 'session' | 'projects'
       filter: string
+      /** Addresses of entries showing their full description */
+      expanded: string[]
       session: AtlasGroup[]
       projects: ProjectGroup[]
       scannedAt: number

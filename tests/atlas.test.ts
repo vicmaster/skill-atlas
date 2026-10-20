@@ -86,6 +86,16 @@ test('pane lists session inventory, dedupes, filters, and shows all projects', a
   // The global copy of "deploy" is shadowed by the project's.
   expect(await ui.find({ key: 's:Global skills:skill:deploy' })).toBeUndefined()
 
+  // Pressing an entry expands it: full description plus the file's path.
+  await ui.press({ key: 's:Global skills:skill:review-adoption' })
+  expect(
+    await ui.find({ type: 'Text', text: `${HOME}/.claude/skills/review-adoption/SKILL.md` }),
+  ).toBeDefined()
+  await ui.press({ key: 's:Global skills:skill:review-adoption' })
+  expect(
+    await ui.find({ type: 'Text', text: `${HOME}/.claude/skills/review-adoption/SKILL.md` }),
+  ).toBeUndefined()
+
   // Filtering narrows by name.
   await ui.input({ key: 'filter', text: 'reviewer', kind: 'change' })
   expect(await ui.find({ key: 's:Project agents:agent:reviewer' })).toBeDefined()

@@ -13,8 +13,10 @@ const DIRS: Record<string, FsEntry[]> = {
   [`${ROOT}/.claude/agents`]: [file('reviewer.md')],
   [`${HOME}/.claude/skills`]: [dir('deploy'), dir('review-adoption')],
   [`${PLUGIN_DIR}/skills`]: [dir('diagram-design')],
-  [`${HOME}/Projects`]: [dir('app'), dir('other')],
+  [`${HOME}/Projects`]: [dir('app'), dir('other'), dir('Magmalabs'), dir('node_modules')],
   [`${HOME}/Projects/other/.claude/skills`]: [dir('thing')],
+  [`${HOME}/Projects/Magmalabs`]: [dir('delivery-assistant')],
+  [`${HOME}/Projects/Magmalabs/delivery-assistant/.claude/skills`]: [dir('triage')],
 }
 
 const FILES: Record<string, string> = {
@@ -31,6 +33,8 @@ const FILES: Record<string, string> = {
     '---\nname: diagram-design\ndescription: Draw diagrams\n---\nbody',
   [`${HOME}/Projects/other/.claude/skills/thing/SKILL.md`]:
     '---\nname: thing\ndescription: A thing elsewhere\n---\nbody',
+  [`${HOME}/Projects/Magmalabs/delivery-assistant/.claude/skills/triage/SKILL.md`]:
+    '---\nname: triage\ndescription: Nested one level down\n---\nbody',
 }
 
 const PANE = {
@@ -93,6 +97,8 @@ test('pane lists session inventory, dedupes, filters, and shows all projects', a
   expect(await ui.find({ key: 'p:other:skill:thing' })).toBeDefined()
   expect(await ui.find({ key: 'p:app:skill:deploy' })).toBeDefined()
   expect(await ui.find({ key: 'p:global · ~/.claude:skill:review-adoption' })).toBeDefined()
+  // A project nested under a grouping folder is found and named by its path.
+  expect(await ui.find({ key: 'p:Magmalabs/delivery-assistant:skill:triage' })).toBeDefined()
   // A project holding both kinds separates them with sub-headers.
   expect(await ui.find({ type: 'Text', text: 'skills · 1' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'agents · 1' })).toBeDefined()

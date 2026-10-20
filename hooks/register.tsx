@@ -5,7 +5,7 @@ import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 const PANE = 'skill-atlas'
 // Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
 // stale copy is visible at a glance.
-const VERSION = '0.3.1'
+const VERSION = '0.4.0'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const
@@ -153,6 +153,8 @@ const scanSession = async ($: EngineInterface): Promise<AtlasGroup[]> => {
   return groups
 }
 
+const SKIPPED_DIRS = new Set(['node_modules', 'vendor', 'dist', 'build', 'target', 'tmp', 'Library'])
+
 /** The cross-project view: every sibling project's .claude/{skills,agents}. */
 const scanProjects = async ($: EngineInterface): Promise<ProjectGroup[]> => {
   const home = (await $.env.get('HOME')) ?? ''
@@ -163,15 +165,24 @@ const scanProjects = async ($: EngineInterface): Promise<ProjectGroup[]> => {
     base = cut > 0 ? root.slice(0, cut) : root
   }
   const groups: ProjectGroup[] = []
-  for (const entry of await listDir($, base)) {
-    if (entry.kind !== 'dir' && entry.kind !== 'other') continue
-    const projectDir = `${base}/${entry.name}`
-    const items = [
-      ...(await scanSkillsDir($, `${projectDir}/.claude/skills`, 'project')),
-      ...(await scanAgentsDir($, `${projectDir}/.claude/agents`, 'project')),
-    ]
-    if (items.length > 0) groups.push({ project: entry.name, items })
+  // Projects may sit under grouping folders (~/Projects/<group>/<project>):
+  // walk a few levels, stop descending once a folder proves to be a project,
+  // and name the group by its path relative to the base.
+  const walk = async (dir: string, label: string, depth: number): Promise<void> => {
+    for (const entry of await listDir($, dir)) {
+      if (entry.kind !== 'dir' && entry.kind !== 'other') continue
+      if (entry.name.startsWith('.') || SKIPPED_DIRS.has(entry.name)) continue
+      const projectDir = `${dir}/${entry.name}`
+      const name = label === '' ? entry.name : `${label}/${entry.name}`
+      const items = [
+        ...(await scanSkillsDir($, `${projectDir}/.claude/skills`, 'project')),
+        ...(await scanAgentsDir($, `${projectDir}/.claude/agents`, 'project')),
+      ]
+      if (items.length > 0) groups.push({ project: name, items })
+      else if (depth > 1) await walk(projectDir, name, depth - 1)
+    }
   }
+  await walk(base, '', 3)
   groups.sort((a, b) => a.project.localeCompare(b.project))
   // The machine-wide set leads the map, so global vs per-project is one glance.
   if (home !== '') {

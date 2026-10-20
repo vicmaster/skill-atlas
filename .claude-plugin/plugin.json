@@ -1,7 +1,9 @@
 {
   "name": "skill-atlas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Live pane showing every skill and subagent: this session's, and across all projects",
-  "author": { "name": "Victor Velázquez" },
+  "author": {
+    "name": "Victor Velázquez"
+  },
   "types": "./types/index.d.ts"
 }

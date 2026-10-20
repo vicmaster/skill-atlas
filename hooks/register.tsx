@@ -3,6 +3,9 @@ import type { Register, EngineInterface } from 'claude-code'
 import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 
 const PANE = 'skill-atlas'
+// Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
+// stale copy is visible at a glance.
+const VERSION = '0.2.1'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const
@@ -255,6 +258,14 @@ const AGENT_ICONS: Record<string, AgentIcon> = {
   },
 }
 
+// Skills get one subtle generic mark (a dim slash in a circle); the hues are
+// reserved for telling agents apart.
+const SKILL_ICON: AgentIcon = {
+  paths:
+    '<circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.1" fill="none" opacity="0.55"/><path d="M8.5 4L5.5 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>',
+  color: '#8b8f98',
+}
+
 const ICON_KEYWORDS: Array<{ keys: string[]; icon: keyof typeof AGENT_ICONS }> = [
   { keys: ['architect', 'system', 'design pattern'], icon: 'architect' },
   { keys: ['review', 'critic', 'inspect', 'audit'], icon: 'review' },
@@ -324,12 +335,12 @@ export const register: Register = on => {
     const descMax = Math.max(80, (e.props.bodyColumns - 2) * 2)
 
     const item = (one: AtlasItem, address: string) => {
-      const icon = one.kind === 'agent' ? pickAgentIcon(one.name, one.description) : undefined
+      const icon = one.kind === 'agent' ? pickAgentIcon(one.name, one.description) : SKILL_ICON
       return (
         <Box flexDirection="column">
           <Box gap={1} alignItems="center">
-            {Svg !== undefined && icon !== undefined && (
-              <Svg source={svgSource(icon)} alt="" width={14} height={14} />
+            {Svg !== undefined && (
+              <Svg source={svgSource(icon)} alt={one.kind} width={14} height={14} />
             )}
             <Button key={address} onPress={() => $.ui.toast(one.path)}>
               {`${one.kind === 'skill' ? '/' : '@'}${one.name}`}{' '}
@@ -413,7 +424,7 @@ export const register: Register = on => {
           ))}
         {scannedAt !== 0 && (
           <Text dimColor size="caption">
-            {shown} shown · scanned {new Date(scannedAt).toLocaleTimeString()}
+            v{VERSION} · {shown} shown · scanned {new Date(scannedAt).toLocaleTimeString()}
           </Text>
         )}
       </Box>

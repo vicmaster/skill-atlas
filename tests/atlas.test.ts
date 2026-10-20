@@ -88,10 +88,14 @@ test('pane lists session inventory, dedupes, filters, and shows all projects', a
   expect(await ui.find({ key: 's:Project skills:skill:deploy' })).toBeUndefined()
   await ui.input({ key: 'filter', text: '', kind: 'change' })
 
-  // The cross-project view groups by project folder.
+  // The cross-project view groups by project folder, global set first.
   await ui.press({ key: 'view-projects' })
   expect(await ui.find({ key: 'p:other:skill:thing' })).toBeDefined()
   expect(await ui.find({ key: 'p:app:skill:deploy' })).toBeDefined()
+  expect(await ui.find({ key: 'p:global · ~/.claude:skill:review-adoption' })).toBeDefined()
+  // A project holding both kinds separates them with sub-headers.
+  expect(await ui.find({ type: 'Text', text: 'skills · 1' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'agents · 1' })).toBeDefined()
 
   await ui.unmount()
 })

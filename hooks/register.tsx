@@ -5,7 +5,7 @@ import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 const PANE = 'skill-atlas'
 // Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
 // stale copy is visible at a glance.
-const VERSION = '0.2.3'
+const VERSION = '0.3.0'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const
@@ -172,7 +172,16 @@ const scanProjects = async ($: EngineInterface): Promise<ProjectGroup[]> => {
     ]
     if (items.length > 0) groups.push({ project: entry.name, items })
   }
-  return groups.sort((a, b) => a.project.localeCompare(b.project))
+  groups.sort((a, b) => a.project.localeCompare(b.project))
+  // The machine-wide set leads the map, so global vs per-project is one glance.
+  if (home !== '') {
+    const globalItems = [
+      ...(await scanSkillsDir($, `${home}/.claude/skills`, 'global')),
+      ...(await scanAgentsDir($, `${home}/.claude/agents`, 'global')),
+    ]
+    if (globalItems.length > 0) groups.unshift({ project: 'global · ~/.claude', items: globalItems })
+  }
+  return groups
 }
 
 const rescan = async ($: EngineInterface): Promise<void> => {
@@ -334,6 +343,7 @@ export const register: Register = on => {
     const Svg = 'Svg' in table ? table.Svg : undefined
     // Roughly two lines of description under the indent, as coide clamps it.
     const descMax = Math.max(80, (e.props.bodyColumns - 2) * 2)
+    const rule = '─'.repeat(Math.max(8, Math.min(e.props.bodyColumns - 2, 48)))
 
     const item = (one: AtlasItem, address: string) => {
       const icon = one.kind === 'agent' ? pickAgentIcon(one.name, one.description) : SKILL_ICON
@@ -403,8 +413,9 @@ export const register: Register = on => {
           <Text dimColor>{query === '' ? 'Nothing found.' : `No matches for “${filter.trim()}”.`}</Text>
         )}
         {view === 'session' &&
-          sessionGroups.map(group => (
+          sessionGroups.map((group, i) => (
             <Box flexDirection="column" rowGap={1} marginBottom={1}>
+              {i > 0 && <Text dimColor>{rule}</Text>}
               <Box gap={1}>
                 <Text weight="semibold" size="caption">{group.label.toUpperCase()}</Text>
                 <Text dimColor size="caption">{group.items.length}</Text>
@@ -413,15 +424,24 @@ export const register: Register = on => {
             </Box>
           ))}
         {view === 'projects' &&
-          projectGroups.map(group => (
-            <Box flexDirection="column" rowGap={1} marginBottom={1}>
-              <Box gap={1}>
-                <Text weight="semibold" size="caption">{group.project.toUpperCase()}</Text>
-                <Text dimColor size="caption">{group.items.length}</Text>
+          projectGroups.map((group, i) => {
+            const skills = group.items.filter(one => one.kind === 'skill')
+            const agents = group.items.filter(one => one.kind === 'agent')
+            const isMixed = skills.length > 0 && agents.length > 0
+            return (
+              <Box flexDirection="column" rowGap={1} marginBottom={1}>
+                {i > 0 && <Text dimColor>{rule}</Text>}
+                <Box gap={1}>
+                  <Text weight="semibold" size="caption">{group.project.toUpperCase()}</Text>
+                  <Text dimColor size="caption">{group.items.length}</Text>
+                </Box>
+                {isMixed && <Text dimColor size="caption" italic>skills · {skills.length}</Text>}
+                {skills.map(one => item(one, `p:${group.project}:skill:${one.name}`))}
+                {isMixed && <Text dimColor size="caption" italic>agents · {agents.length}</Text>}
+                {agents.map(one => item(one, `p:${group.project}:agent:${one.name}`))}
               </Box>
-              {group.items.map(one => item(one, `p:${group.project}:${one.kind}:${one.name}`))}
-            </Box>
-          ))}
+            )
+          })}
         {scannedAt !== 0 && (
           <Text dimColor size="caption">
             v{VERSION} · {shown} shown · scanned {new Date(scannedAt).toLocaleTimeString()}

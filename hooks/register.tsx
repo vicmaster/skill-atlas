@@ -185,7 +185,100 @@ const matches = (item: AtlasItem, query: string): boolean =>
   item.description.toLowerCase().includes(query) ||
   item.scope.toLowerCase().includes(query)
 
-const trim = (text: string): string => (text.length > 160 ? `${text.slice(0, 159)}…` : text)
+const trim = (text: string, max: number): string =>
+  text.length > max ? `${text.slice(0, Math.max(1, max - 1))}…` : text
+
+// Agent icons ported from coide's agentIcons.ts: deterministic keyword match
+// over name + description, 14x14 strokes, one hue per personality.
+type AgentIcon = { paths: string; color: string }
+
+const AGENT_ICONS: Record<string, AgentIcon> = {
+  architect: {
+    paths:
+      '<path d="M2 12h10M3 12V6M6 12V4M9 12V6M11 12V6M2 4l4-2 4 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+    color: '#fbbf24',
+  },
+  review: {
+    paths:
+      '<circle cx="6" cy="6" r="3.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M9 9l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+    color: '#60a5fa',
+  },
+  design: {
+    paths:
+      '<circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="4.5" cy="6" r="0.6" fill="currentColor"/><circle cx="6" cy="9.5" r="0.6" fill="currentColor"/><circle cx="9.5" cy="6.5" r="0.6" fill="currentColor"/>',
+    color: '#f472b6',
+  },
+  security: {
+    paths:
+      '<path d="M7 1.5L2 3.5v3.5c0 3 2 5 5 6 3-1 5-3 5-6V3.5L7 1.5z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/><path d="M5 7l1.5 1.5L9 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+    color: '#34d399',
+  },
+  debug: {
+    paths:
+      '<ellipse cx="7" cy="8" rx="3" ry="3.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M7 4.5V6M4 8H2M12 8h-2M4 11l-1.5 1.5M10 11l1.5 1.5M5.5 4l-1-1.5M8.5 4l1-1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
+    color: '#f87171',
+  },
+  test: {
+    paths:
+      '<path d="M5 1.5v4L2.5 11.5a1 1 0 00.9 1.5h7.2a1 1 0 00.9-1.5L9 5.5v-4M4 1.5h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="6" cy="9" r="0.6" fill="currentColor"/><circle cx="8" cy="10.5" r="0.6" fill="currentColor"/>',
+    color: '#22d3ee',
+  },
+  research: {
+    paths:
+      '<path d="M2 2.5h6.5L11 5v8H2v-10.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/><path d="M8 2.5V5h3M4 7h5M4 9.5h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
+    color: '#c084fc',
+  },
+  writer: {
+    paths:
+      '<path d="M2 11.5L4 13l8.5-8.5L11 3 2.5 11.5zM10 4l1 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+    color: '#38bdf8',
+  },
+  perf: {
+    paths:
+      '<path d="M7 1.5l-4 7h3l-1 4 5-7h-3l1-4z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/>',
+    color: '#facc15',
+  },
+  release: {
+    paths:
+      '<path d="M7 1.5c-2 1.5-3 3.5-3 5.5L2 10l2.5-1 2 2 1-2.5 2.5 2v-2c2-2 2-4 0-7z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/><circle cx="7" cy="5" r="1" fill="currentColor"/>',
+    color: '#fb923c',
+  },
+  data: {
+    paths:
+      '<ellipse cx="7" cy="3" rx="4" ry="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M3 3v8c0 .8 1.8 1.5 4 1.5s4-.7 4-1.5V3M3 7c0 .8 1.8 1.5 4 1.5s4-.7 4-1.5" stroke="currentColor" stroke-width="1.2" fill="none"/>',
+    color: '#818cf8',
+  },
+  default: {
+    paths:
+      '<path d="M7 1.5l1.5 3.5L12 6.5l-3 2 1 3.5-3-2-3 2 1-3.5-3-2 3.5-1L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/>',
+    color: '#9ca3af',
+  },
+}
+
+const ICON_KEYWORDS: Array<{ keys: string[]; icon: keyof typeof AGENT_ICONS }> = [
+  { keys: ['architect', 'system', 'design pattern'], icon: 'architect' },
+  { keys: ['review', 'critic', 'inspect', 'audit'], icon: 'review' },
+  { keys: ['design', 'ui', 'ux', 'visual', 'styling', 'layout'], icon: 'design' },
+  { keys: ['security', 'auth', 'vuln', 'pentest', 'crypto'], icon: 'security' },
+  { keys: ['debug', 'bug', 'fix', 'troubleshoot'], icon: 'debug' },
+  { keys: ['test', 'qa', 'spec', 'coverage'], icon: 'test' },
+  { keys: ['research', 'explore', 'investigate', 'analyze', 'docs'], icon: 'research' },
+  { keys: ['write', 'author', 'doc', 'content', 'copy'], icon: 'writer' },
+  { keys: ['perf', 'fast', 'optim', 'speed', 'profile'], icon: 'perf' },
+  { keys: ['release', 'deploy', 'ship', 'publish'], icon: 'release' },
+  { keys: ['data', 'database', 'sql', 'query', 'migration', 'schema'], icon: 'data' },
+]
+
+const pickAgentIcon = (name: string, description: string): AgentIcon => {
+  const haystack = `${name} ${description}`.toLowerCase()
+  for (const entry of ICON_KEYWORDS) {
+    if (entry.keys.some(k => haystack.includes(k))) return AGENT_ICONS[entry.icon] ?? AGENT_ICONS.default!
+  }
+  return AGENT_ICONS.default!
+}
+
+const svgSource = (icon: AgentIcon): string =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" color="${icon.color}">${icon.paths}</svg>`
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
@@ -224,20 +317,34 @@ export const register: Register = on => {
       )
     }
 
-    const { Box, Text, Button, Input } = $.ui.resolve(e)
+    const table = $.ui.resolve(e)
+    const { Box, Text, Button, Input } = table
+    const Svg = 'Svg' in table ? table.Svg : undefined
+    // Roughly two lines of description under the indent, as coide clamps it.
+    const descMax = Math.max(80, (e.props.bodyColumns - 2) * 2)
 
-    const item = (one: AtlasItem, address: string) => (
-      <Box flexDirection="column">
-        <Button key={address} onPress={() => $.ui.toast(one.path)}>
-          {`${one.kind === 'skill' ? '/' : '@'}${one.name}`}{' '}
-          <Text dimColor size="caption">{one.kind}</Text>
-          {one.scope !== 'project' && <Text dimColor size="caption">{` ${one.scope}`}</Text>}
-        </Button>
-        {one.description !== '' && (
-          <Text dimColor size="caption" wrap="wrap">{trim(one.description)}</Text>
-        )}
-      </Box>
-    )
+    const item = (one: AtlasItem, address: string) => {
+      const icon = one.kind === 'agent' ? pickAgentIcon(one.name, one.description) : undefined
+      return (
+        <Box flexDirection="column">
+          <Box gap={1} alignItems="center">
+            {Svg !== undefined && icon !== undefined && (
+              <Svg source={svgSource(icon)} alt="" width={14} height={14} />
+            )}
+            <Button key={address} onPress={() => $.ui.toast(one.path)}>
+              {`${one.kind === 'skill' ? '/' : '@'}${one.name}`}{' '}
+              <Text dimColor size="caption">{one.kind}</Text>
+              {one.scope !== 'project' && <Text dimColor size="caption">{` ${one.scope}`}</Text>}
+            </Button>
+          </Box>
+          {one.description !== '' && (
+            <Box paddingLeft={2}>
+              <Text dimColor size="caption" wrap="wrap">{trim(one.description, descMax)}</Text>
+            </Box>
+          )}
+        </Box>
+      )
+    }
 
     const sessionGroups = session
       .map(group => ({ ...group, items: group.items.filter(one => matches(one, query)) }))
@@ -286,7 +393,7 @@ export const register: Register = on => {
         )}
         {view === 'session' &&
           sessionGroups.map(group => (
-            <Box flexDirection="column">
+            <Box flexDirection="column" rowGap={1} marginBottom={1}>
               <Box gap={1}>
                 <Text weight="semibold" size="caption">{group.label.toUpperCase()}</Text>
                 <Text dimColor size="caption">{group.items.length}</Text>
@@ -296,7 +403,7 @@ export const register: Register = on => {
           ))}
         {view === 'projects' &&
           projectGroups.map(group => (
-            <Box flexDirection="column">
+            <Box flexDirection="column" rowGap={1} marginBottom={1}>
               <Box gap={1}>
                 <Text weight="semibold" size="caption">{group.project.toUpperCase()}</Text>
                 <Text dimColor size="caption">{group.items.length}</Text>

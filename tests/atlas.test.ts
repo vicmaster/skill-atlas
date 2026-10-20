@@ -72,6 +72,8 @@ test('pane lists session inventory, dedupes, filters, and shows all projects', a
   expect(await ui.find({ key: 's:Project skills:skill:deploy' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'Ship the app' })).toBeDefined()
   expect(await ui.find({ key: 's:Project agents:agent:reviewer' })).toBeDefined()
+  // Agent rows carry a personality icon on surfaces that draw Svg.
+  expect(await ui.find({ type: 'Svg' })).toBeDefined()
   expect(await ui.find({ key: 's:Global skills:skill:review-adoption' })).toBeDefined()
   // Folded (>) descriptions are joined into one line.
   expect(await ui.find({ type: 'Text', text: 'Evaluate a tool for adoption fit' })).toBeDefined()

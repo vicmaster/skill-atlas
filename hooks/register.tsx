@@ -5,7 +5,7 @@ import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 const PANE = 'skill-atlas'
 // Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
 // stale copy is visible at a glance.
-const VERSION = '0.2.2'
+const VERSION = '0.2.3'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const
@@ -263,11 +263,9 @@ const AGENT_ICONS: Record<string, AgentIcon> = {
 // square+slash = skill, round personality icon = agent.
 const SKILL_ICON: AgentIcon = {
   paths:
-    '<rect x="1.5" y="1.5" width="11" height="11" rx="3" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M8.6 3.8L5.4 10.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
-  color: '#2dd4bf',
+    '<g opacity="0.75"><rect x="1.5" y="1.5" width="11" height="11" rx="3" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M8.6 3.8L5.4 10.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></g>',
+  color: '#14b8a6',
 }
-
-const KIND_COLORS = { skill: '#2dd4bf', agent: '#a78bfa' } as const
 
 const ICON_KEYWORDS: Array<{ keys: string[]; icon: keyof typeof AGENT_ICONS }> = [
   { keys: ['architect', 'system', 'design pattern'], icon: 'architect' },
@@ -346,8 +344,7 @@ export const register: Register = on => {
               <Svg source={svgSource(icon)} alt={one.kind} width={14} height={14} />
             )}
             <Button key={address} onPress={() => $.ui.toast(one.path)}>
-              {`${one.kind === 'skill' ? '/' : '@'}${one.name}`}{' '}
-              <Text size="caption" color={KIND_COLORS[one.kind]}>{one.kind}</Text>
+              {`${one.kind === 'skill' ? '/' : '@'}${one.name}`}
               {one.scope !== 'project' && <Text dimColor size="caption">{` ${one.scope}`}</Text>}
             </Button>
           </Box>

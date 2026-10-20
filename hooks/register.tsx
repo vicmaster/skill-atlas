@@ -5,7 +5,7 @@ import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 const PANE = 'skill-atlas'
 // Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
 // stale copy is visible at a glance.
-const VERSION = '0.3.0'
+const VERSION = '0.3.1'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const
@@ -343,7 +343,10 @@ export const register: Register = on => {
     const Svg = 'Svg' in table ? table.Svg : undefined
     // Roughly two lines of description under the indent, as coide clamps it.
     const descMax = Math.max(80, (e.props.bodyColumns - 2) * 2)
-    const rule = '─'.repeat(Math.max(8, Math.min(e.props.bodyColumns - 2, 48)))
+    // Overlong on purpose: wrap="truncate" clips it to the box on every
+    // surface, where a width computed from bodyColumns (cells) overflows the
+    // desktop's proportional text and wraps.
+    const rule = '─'.repeat(120)
 
     const item = (one: AtlasItem, address: string) => {
       const icon = one.kind === 'agent' ? pickAgentIcon(one.name, one.description) : SKILL_ICON
@@ -415,7 +418,7 @@ export const register: Register = on => {
         {view === 'session' &&
           sessionGroups.map((group, i) => (
             <Box flexDirection="column" rowGap={1} marginBottom={1}>
-              {i > 0 && <Text dimColor>{rule}</Text>}
+              {i > 0 && <Text dimColor wrap="truncate">{rule}</Text>}
               <Box gap={1}>
                 <Text weight="semibold" size="caption">{group.label.toUpperCase()}</Text>
                 <Text dimColor size="caption">{group.items.length}</Text>
@@ -430,7 +433,7 @@ export const register: Register = on => {
             const isMixed = skills.length > 0 && agents.length > 0
             return (
               <Box flexDirection="column" rowGap={1} marginBottom={1}>
-                {i > 0 && <Text dimColor>{rule}</Text>}
+                {i > 0 && <Text dimColor wrap="truncate">{rule}</Text>}
                 <Box gap={1}>
                   <Text weight="semibold" size="caption">{group.project.toUpperCase()}</Text>
                   <Text dimColor size="caption">{group.items.length}</Text>

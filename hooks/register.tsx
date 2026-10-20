@@ -5,7 +5,7 @@ import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 const PANE = 'skill-atlas'
 // Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
 // stale copy is visible at a glance.
-const VERSION = '0.2.1'
+const VERSION = '0.2.2'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const
@@ -258,13 +258,16 @@ const AGENT_ICONS: Record<string, AgentIcon> = {
   },
 }
 
-// Skills get one subtle generic mark (a dim slash in a circle); the hues are
-// reserved for telling agents apart.
+// Every skill shares one badge — a rounded square holding the "/" it is
+// invoked with, in one fixed hue — so the shape family tells the kind apart:
+// square+slash = skill, round personality icon = agent.
 const SKILL_ICON: AgentIcon = {
   paths:
-    '<circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.1" fill="none" opacity="0.55"/><path d="M8.5 4L5.5 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>',
-  color: '#8b8f98',
+    '<rect x="1.5" y="1.5" width="11" height="11" rx="3" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M8.6 3.8L5.4 10.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+  color: '#2dd4bf',
 }
+
+const KIND_COLORS = { skill: '#2dd4bf', agent: '#a78bfa' } as const
 
 const ICON_KEYWORDS: Array<{ keys: string[]; icon: keyof typeof AGENT_ICONS }> = [
   { keys: ['architect', 'system', 'design pattern'], icon: 'architect' },
@@ -344,7 +347,7 @@ export const register: Register = on => {
             )}
             <Button key={address} onPress={() => $.ui.toast(one.path)}>
               {`${one.kind === 'skill' ? '/' : '@'}${one.name}`}{' '}
-              <Text dimColor size="caption">{one.kind}</Text>
+              <Text size="caption" color={KIND_COLORS[one.kind]}>{one.kind}</Text>
               {one.scope !== 'project' && <Text dimColor size="caption">{` ${one.scope}`}</Text>}
             </Button>
           </Box>

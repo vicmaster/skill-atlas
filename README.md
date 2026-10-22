@@ -13,10 +13,10 @@ Two views, toggled at the top of the pane:
   - global skills/agents (`~/.claude/skills/`, `~/.claude/agents/`)
   - skills shipped by installed plugins (read from `~/.claude/plugins/installed_plugins.json`)
 
-  A project entry shadows a global one with the same name, like the engine does.
-- **All projects** — a scan of every sibling project (`~/Projects/*/.claude/{skills,agents}/`), grouped by project, so you can see at a glance which skill lives in which repo.
+  When two entries share a name, the project one wins, then the global one.
+- **All projects** — a scan of the folder your repos live in for `.claude/{skills,agents}/`: `~/Projects` if it exists, otherwise the folder that holds the project the session is open in. It goes up to three levels deep, so grouping folders like `<client>/<repo>` work, and skips hidden and build folders (`node_modules`, `vendor`, `dist`, `build`, `target`, `tmp`, `Library`). Results are grouped by project, with your global `~/.claude` set pinned on top, so you can see at a glance which skill lives in which repo.
 
-Each entry shows its name, kind (`skill`/`agent`), scope badge and the description parsed from its frontmatter. The input at the top filters by name, description or scope as you type. Pressing an entry toasts the path of the file behind it.
+Each entry shows its name (`/skill` or `@agent`), a kind icon and the description parsed from its frontmatter; globals and plugin skills also get a scope badge. The input at the top filters by name, description or scope as you type. Pressing an entry expands it to show the full description and the path of the file behind it; press again to collapse.
 
 Everything is read-only: the mod never writes to any project.
 
@@ -54,7 +54,9 @@ claude plugin validate .
 claude plugin test .
 ```
 
-`tests/atlas.test.ts` mounts the pane on a fake filesystem and covers scanning, project-over-global dedupe, filtering and the cross-project view.
+`claude plugin test` needs a recent CLI. If yours doesn't have it, the binary bundled with the desktop app does (on macOS, under `~/Library/Application Support/Claude/claude-code/<version>/`).
+
+`tests/atlas.test.ts` mounts the pane on a fake filesystem and covers scanning, project-over-global dedupe, expanding an entry, filtering and the cross-project view (nested folders included).
 
 ## Who built this
 

@@ -5,7 +5,7 @@ import type { AtlasItem, AtlasGroup, ProjectGroup } from '../types'
 const PANE = 'skill-atlas'
 // Keep in step with .claude-plugin/plugin.json; shown in the pane footer so a
 // stale copy is visible at a glance.
-const VERSION = '0.5.1'
+const VERSION = '0.5.2'
 
 const viewRef = { plugin: 'skill-atlas', key: 'view' } as const
 const filterRef = { plugin: 'skill-atlas', key: 'filter' } as const

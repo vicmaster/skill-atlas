@@ -68,3 +68,7 @@ Built by [Victor Velázquez](https://victorvelazquez.dev) — COO at [MagmaLabs]
 - `hooks/register.tsx` — the whole mod: scanners, state, slash command, pane renderer
 - `types/index.d.ts` — the plugin's state contract
 - `tests/atlas.test.ts` — behaviour test
+
+## License
+
+[MIT](LICENSE)

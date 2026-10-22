@@ -1,6 +1,7 @@
 {
   "name": "skill-atlas",
-  "version": "0.5.1",
+  "version": "0.5.2",
+  "license": "MIT",
   "description": "Live pane showing every skill and subagent: this session's, and across all projects",
   "author": {
     "name": "Victor Velázquez"
